@@ -68,27 +68,39 @@ class ProgramCourseRunSeatsCondition(SingleItemConsumptionConditionMixin, Condit
             return False
 
         enrollments = []
+        entitlements = []
         if basket.site.siteconfiguration.enable_partial_program:
-            api_resource = 'enrollments'
-            cache_key = get_cache_key(
-                site_domain=basket.site.domain,
-                resource=api_resource,
-                username=basket.owner.username,
-            )
-            enrollments = cache.get(cache_key, [])
-            if not enrollments:
-                api = basket.site.siteconfiguration.enrollment_api_client
-                user = basket.owner.username
-                try:
-                    enrollments = api.enrollment.get(user=user)
-                    cache.set(cache_key, enrollments, settings.ENROLLMENT_API_CACHE_TIMEOUT)
-                except (ConnectionError, SlumberBaseException, Timeout) as exc:
-                    logger.error('Failed to retrieve enrollments: %s', str(exc))
+            # the second list element is commented out because the endpoint is not yet active
+            for api_resource in ['enrollments', ]:  # 'entitlements']:
+                cache_key = get_cache_key(
+                    site_domain=basket.site.domain,
+                    resource=api_resource,
+                    username=basket.owner.username,
+                )
+                user_data_list = cache.get(cache_key, [])
+                if not user_data_list:
+                    api = basket.site.siteconfiguration.enrollment_api_client
+                    user = basket.owner.username
+                    try:
+                        if api_resource == 'enrollments':
+                            user_data_list = api.enrollment.get(user=user)
+                        else:
+                            user_data_list = api.entitlement.get(user=user)
+                        cache.set(cache_key, user_data_list, settings.ENROLLMENT_API_CACHE_TIMEOUT)
+                    except (ConnectionError, SlumberBaseException, Timeout) as exc:
+                        logger.error('Failed to retrieve %s : %s', api_resource, str(exc))
+                if api_resource == 'enrollments':
+                    enrollments = user_data_list
+                else:
+                    entitlements = user_data_list
 
         for course in program['courses']:
             # If the user is already enrolled in a course, we do not need to check their basket for it
             if any(course['key'] in enrollment['course_details']['course_id'] and
                    enrollment['mode'] in applicable_seat_types for enrollment in enrollments):
+                continue
+            if any(course['uuid'] in entitlement['course_uuid'] and
+                   entitlement['mode'] in applicable_seat_types for entitlement in entitlements):
                 continue
 
             # If the  basket has no SKUs left, but we still have courses over which
