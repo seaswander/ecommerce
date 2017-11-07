@@ -70,8 +70,7 @@ class ProgramCourseRunSeatsCondition(SingleItemConsumptionConditionMixin, Condit
         enrollments = []
         entitlements = []
         if basket.site.siteconfiguration.enable_partial_program:
-            # the second list element is commented out because the endpoint is not yet active
-            for api_resource in ['enrollments', ]:  # 'entitlements']:
+            for api_resource in ['enrollments', 'entitlements']:
                 cache_key = get_cache_key(
                     site_domain=basket.site.domain,
                     resource=api_resource,
@@ -112,6 +111,9 @@ class ProgramCourseRunSeatsCondition(SingleItemConsumptionConditionMixin, Condit
             skus = set()
             for course_run in course['course_runs']:
                 skus.update(set([seat['sku'] for seat in course_run['seats'] if seat['type'] in applicable_seat_types]))
+            for entitlement in course['entitlements']:
+                if entitlement['mode'] in applicable_seat_types:
+                    skus.update(entitlement['sku'])
 
             # The lack of a difference in the set of SKUs in the basket and the course indicates that
             # that there is no intersection. Therefore, the basket contains no SKUs for the current course.
