@@ -22,6 +22,15 @@ class ProgramTestMixin(DiscoveryTestMixin):
         if not empty:
             courses = []
             for i in range(1, 5):
+                sku = 'sku00' + str(i)
+                entitlements = [
+                    {
+                        "mode": "verified",
+                        "price": "10.00",
+                        "currency": "USD",
+                        "sku": sku
+                    }
+                ]
                 key = 'course-v1:test-org+course+' + str(i)
                 course_runs = []
                 for __ in range(1, 4):
@@ -37,7 +46,7 @@ class ProgramTestMixin(DiscoveryTestMixin):
                         } for seat in course_run.seat_products]
                     })
 
-                courses.append({'key': key, 'course_runs': course_runs, })
+                courses.append({'key': key, 'course_runs': course_runs, 'entitlements': entitlements, })
 
             program_uuid = str(program_uuid)
             data = {
@@ -45,6 +54,7 @@ class ProgramTestMixin(DiscoveryTestMixin):
                 'title': title,
                 'type': 'MicroMockers',
                 'courses': courses,
+                'entitlements': entitlements,
                 'applicable_seat_types': [
                     'verified',
                     'professional',

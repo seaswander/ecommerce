@@ -112,7 +112,7 @@ class ProgramCourseRunSeatsCondition(SingleItemConsumptionConditionMixin, Condit
             for course_run in course['course_runs']:
                 skus.update(set([seat['sku'] for seat in course_run['seats'] if seat['type'] in applicable_seat_types]))
             for entitlement in course['entitlements']:
-                if entitlement['mode'] in applicable_seat_types:
+                if entitlement['mode'].lower() in applicable_seat_types:
                     skus.update(entitlement['sku'])
 
             # The lack of a difference in the set of SKUs in the basket and the course indicates that
